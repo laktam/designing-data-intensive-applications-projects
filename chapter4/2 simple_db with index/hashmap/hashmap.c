@@ -24,6 +24,11 @@ HashMap *create_default_hashmap() {
 }
 
 void put(char *key, char *value, HashMap *hashmap){
+    key = strdup(key);
+    value = strdup(value);
+    if(key == NULL && value == NULL) {
+        exit(1);
+    }
     // resize the nodes array if the threashold is reached (0.75 load factor)
     if(++size > internal_capacity * 0.75) { // internal_capacity * load factor = threshold
         internal_capacity = internal_capacity * 2;
