@@ -13,6 +13,7 @@ int main(int argc, char *argv[]) {
     put("test3", "test value3", hashmap);
     printf("value for test : %s\n", get("test", hashmap));
     printf("value for test3 : %s\n", get("test3", hashmap));
+    destroy_hashmap(hashmap);
     // if(argc == 3) {
     //     if(strcmp(argv[1], "get") == 0) {
     //         db_get(argv[2]);

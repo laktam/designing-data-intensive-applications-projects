@@ -8,5 +8,6 @@ void put(char *key, char *value, HashMap *hashmap);
 char *get(char *key, HashMap *hashmap);
 int get_index(char *key);
 void copy_items(HashMap *old_hashmap, HashMap *new_hashmap);
+void destroy_hashmap(HashMap *hashmap);
 
 #endif

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "hashmap.h"
 
 static int internal_capacity = 16;
@@ -26,7 +27,7 @@ HashMap *create_default_hashmap() {
 void put(char *key, char *value, HashMap *hashmap){
     key = strdup(key);
     value = strdup(value);
-    if(key == NULL && value == NULL) {
+    if(key == NULL || value == NULL) {
         exit(1);
     }
     // resize the nodes array if the threashold is reached (0.75 load factor)
@@ -92,7 +93,7 @@ char *get(char *key, HashMap *hashmap){
 
 int get_index(char *key) {
     int sum = 0;
-    while (*key != '\n'){
+    while (*key != '\0'){
         sum += (int) *key;
         key++;
     }
@@ -110,4 +111,22 @@ void copy_items(HashMap *old_hashmap, HashMap *new_hashmap) {
             }
         }
     }
+}
+
+void destroy_hashmap(HashMap *hashmap) {
+    for(int i = 0; i < internal_capacity; i++) {
+        HashMap *current = &hashmap[i];
+        bool first = true;
+        while(current != NULL) {
+            free(current->key);
+            free(current->value);
+            HashMap *tmp = current->next;
+            if(!first) {
+                free(current);
+            }
+            current = tmp;
+            first = false;
+        }
+    }
+    free(hashmap);
 }
