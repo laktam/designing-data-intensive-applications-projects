@@ -10,7 +10,7 @@ static float internal_load_factor = 0.75;
 
 typedef struct HashMap{
     char *key;
-    char *value;
+    long value;
     struct HashMap *next;
 } HashMap;
 
@@ -24,9 +24,8 @@ HashMap *create_default_hashmap() {
     HashMap *hashmap = calloc(internal_capacity, sizeof *hashmap);
 }
 
-void put(char *key, char *value, HashMap *hashmap){
+void put(char *key, long value, HashMap *hashmap){
     key = strdup(key);
-    value = strdup(value);
     if(key == NULL || value == NULL) {
         exit(1);
     }
@@ -73,7 +72,7 @@ void put(char *key, char *value, HashMap *hashmap){
     
 }
 
-char *get(char *key, HashMap *hashmap){
+long get(char *key, HashMap *hashmap){
     int index = get_index(key);
     if(strcmp(hashmap[index].key, key) == 0) {
         return hashmap[index].value;
@@ -88,6 +87,7 @@ char *get(char *key, HashMap *hashmap){
                 current->next = current->next->next; 
             }
         }
+        return -1L;// not found in the hashmap
     }
 }
 
