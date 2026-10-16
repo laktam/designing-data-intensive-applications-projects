@@ -5,7 +5,7 @@
 #include "hashmap.h"
 
 static int internal_capacity = 16;
-static int size = 0;
+static int size = 0; //!!! size is global  to all hashmaps wich is wrong
 static float internal_load_factor = 0.75;
 
 typedef struct HashMap{
@@ -26,24 +26,26 @@ HashMap *create_default_hashmap() {
     return hashmap;
 }
 
-void put(char *key, long value, HashMap *hashmap){
+void put(char *key, long value, HashMap** hashmap_p){
+    HashMap* hashmap = *hashmap_p;
     key = strdup(key);
-    printf("key in hashmap put: %s\n", key);
     if(key == NULL) {
         exit(1);
     }
     // resize the nodes array if the threashold is reached (0.75 load factor)
     if(++size > internal_capacity * 0.75) { // internal_capacity * load factor = threshold
         internal_capacity = internal_capacity * 2;
-        HashMap *new_hashmap = realloc(hashmap, internal_capacity * sizeof(HashMap));
+        HashMap *new_hashmap = malloc(internal_capacity * sizeof(HashMap));
         if(new_hashmap == NULL) {
             printf("error reallocating hashmap");
             free(hashmap);
             exit(1);
         }
         copy_items(hashmap, new_hashmap);
-        free(hashmap);
+        *hashmap_p = new_hashmap;
+        destroy_hashmap(hashmap);
         hashmap = new_hashmap;
+        size++;// because we reset size in copy_items
     }
     // hash the key and use the hash it as index
     // insert if if the place is empty or else put it in next
@@ -105,11 +107,12 @@ int get_index(char *key) {
 }
 
 void copy_items(HashMap *old_hashmap, HashMap *new_hashmap) {
-    for(int i = 0; i < internal_capacity; i++) {
-        if(&old_hashmap[i] != NULL){
-            put(old_hashmap[i].key, old_hashmap[i].value, new_hashmap);
+    size = 0; // reset size to not double it, because put is called here
+    for(int i = 0; i < internal_capacity / 2; i++) {
+        if(old_hashmap[i].key != NULL){
+            put(old_hashmap[i].key, old_hashmap[i].value, &new_hashmap);
             while(old_hashmap[i].next != NULL){
-                put(old_hashmap[i].next->key, old_hashmap[i].next->value, new_hashmap);
+                put(old_hashmap[i].next->key, old_hashmap[i].next->value, &new_hashmap);
                 old_hashmap[i].next = old_hashmap[i].next->next;
             }
         }

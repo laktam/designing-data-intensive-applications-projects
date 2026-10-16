@@ -4,7 +4,7 @@
 #include "hashmap/hashmap.h"
 
 void db_get(char *key, HashMap* hashmap);
-void db_set(char *key, char *value, HashMap *hashmap);
+void db_set(char *key, char *value, HashMap** hashmap);
 
 int main(int argc, char *argv[]) {
     HashMap *hashmap = create_default_hashmap();
@@ -23,7 +23,10 @@ int main(int argc, char *argv[]) {
         char* command = strtok(input, " ");
         char* key = strtok(NULL, " ");
         
-
+        if(command == NULL) {
+            printf("No command was entred!\n");
+            continue;
+        }
         if(strcmp(command, "get") == 0){
             printf("parsed = command : %s, key : %s\n", command, key);
             db_get(key, hashmap);
@@ -48,7 +51,7 @@ int main(int argc, char *argv[]) {
             }
             printf("parsed = command : %s, key : %s, value : %s\n", command, key, value);
             
-            db_set(key, value, hashmap);
+            db_set(key, value, &hashmap);
             // free(first_word_value);
             // free(sub_value);
         }
@@ -78,31 +81,9 @@ void db_get(char *key, HashMap* hashmap) {
     char* final_value = strtok(NULL, ";");
     printf("value for key %s is %s", key, final_value);// no need for line return already in the value
     fclose(fptr);
-    // char line[100];
-    // int line_count = 0;
-    // char *last_key = NULL;
-
-    // while(fgets(line, sizeof(line), fptr) != NULL) {
-    //     // check if key is in the start of this line
-    //     for(int i = 0; i < 100; i++) {
-    //         // the key is equal to the start of the line until ';' and the the key ends there
-    //         if(line[i] == ';' && strlen(key) == i) {
-    //             last_key = line + i + 1;
-    //         }
-    //         if(line[i] != key[i]) {
-    //             break;
-    //         }
-    //     }
-    // }
-
-    // if(last_key == NULL) {
-    //     printf("key not found!");
-    //     exit(1);
-    // }
-    // printf("%s\n", last_key);
 }
 
-void db_set(char *key, char *value, HashMap *hashmap) {
+void db_set(char *key, char *value, HashMap** hashmap) {
     FILE *fptr = fopen("db.txt", "a");
     if(fptr == NULL) {
         printf("error opening file");
@@ -116,7 +97,7 @@ void db_set(char *key, char *value, HashMap *hashmap) {
     }
 
     printf("setting key %s to offset %d\n", key, offset);
-    put(key, offset, hashmap);
+    put(key, offset, &hashmap);
     fprintf(fptr, "%s;%s\n", key, value);
     fclose(fptr);
 }
