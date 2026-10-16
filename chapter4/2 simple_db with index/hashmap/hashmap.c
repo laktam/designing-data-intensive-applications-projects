@@ -17,22 +17,25 @@ typedef struct HashMap{
 HashMap *create_hashmap(int capacity, int load_factor) {
     internal_capacity= capacity;
     internal_load_factor = load_factor;
-    HashMap *hashmap = calloc(capacity, sizeof *hashmap);
+    HashMap *hashmap = calloc(capacity, sizeof(HashMap));
+    return hashmap;
 }
 
 HashMap *create_default_hashmap() {
-    HashMap *hashmap = calloc(internal_capacity, sizeof *hashmap);
+    HashMap *hashmap = calloc(internal_capacity, sizeof(HashMap));
+    return hashmap;
 }
 
 void put(char *key, long value, HashMap *hashmap){
     key = strdup(key);
-    if(key == NULL || value == NULL) {
+    printf("key in hashmap put: %s\n", key);
+    if(key == NULL) {
         exit(1);
     }
     // resize the nodes array if the threashold is reached (0.75 load factor)
     if(++size > internal_capacity * 0.75) { // internal_capacity * load factor = threshold
         internal_capacity = internal_capacity * 2;
-        HashMap *new_hashmap = realloc(hashmap, internal_capacity);
+        HashMap *new_hashmap = realloc(hashmap, internal_capacity * sizeof(HashMap));
         if(new_hashmap == NULL) {
             printf("error reallocating hashmap");
             free(hashmap);
@@ -119,7 +122,6 @@ void destroy_hashmap(HashMap *hashmap) {
         bool first = true;
         while(current != NULL) {
             free(current->key);
-            free(current->value);
             HashMap *tmp = current->next;
             if(!first) {
                 free(current);
