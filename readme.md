@@ -6,7 +6,7 @@ Learning project inspired by Designing Data-Intensive Applications
         - o(1)
     - get key: retrieve the value associated with a key.
         - o(n) : it may need to scan the whole file looking for the key
-2. Log-Structured Storage with index in memory
+2. adding an in memory index
     - To make get faster we need an index, a separate data structure that help us efficently find values, but it add an overhead in writes (set method) because the index need to be updated on every write
     - the problem in this case is that it don't take existing db content in the start as it is not in the index
     - the second problem is that index data is lost when the program end as it is not persisted
