@@ -11,3 +11,21 @@ Learning project inspired by Designing Data-Intensive Applications
     - the problem in this case is that it don't take existing db content in the start as it is not in the index
     - the second problem is that index data is lost when the program end as it is not persisted
     - if we ignore this, we have now o(1) write and reads, appart from the time where we resize the hashmap array when it reaches the load factor
+    - and in this implementation we override old value for same key because we have the exact offset in the file
+    - db running example:
+        ```console
+        $.\db_w_index.exe
+        >get test
+        value
+        >set test value 2
+        >get test 
+        value 2
+        >get nok
+        >set tt a new value
+        >set key verry verry long value
+        >get tt
+        a new value
+        >get key
+        verry verry long value
+        >
+        ```
