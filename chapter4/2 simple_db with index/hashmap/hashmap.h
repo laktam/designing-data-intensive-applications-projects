@@ -18,7 +18,6 @@ HashMap* create_default_hashmap();
 HashMap* create_hashmap(int capacity, float load_factor);
 void put(char *key, long value, HashMap* hashmap_container);
 long get(char *key, HashMap* hashmap_container);
-void destroy_hashmap_chain(HashMapNode *hashmap, int capacity);
 void destroy_hashmap(HashMap* hashmap);
 
 #endif

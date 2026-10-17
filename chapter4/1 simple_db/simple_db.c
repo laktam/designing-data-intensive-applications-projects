@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
 void db_get(char *key) {
     FILE *fptr = fopen("db.txt", "r");
     if(fptr == NULL) {
-        printf("error");
+        printf("error getting result");
         exit(1);
     }
 

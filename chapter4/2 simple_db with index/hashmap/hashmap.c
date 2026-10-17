@@ -6,6 +6,7 @@
 
 static void copy_items(HashMap* old_hashmap_container, HashMapNode *new_hashmap);
 static int get_index(char *key, HashMap* hashmap_container);
+static void destroy_hashmap_content(HashMapNode *hashmap, int capacity);
 
 HashMap* create_hashmap(int capacity, float load_factor) {
     HashMap* hashmap = malloc(sizeof(*hashmap));
@@ -117,7 +118,6 @@ static int get_index(char *key, HashMap* hashmap_container) {
         sum += (int) *key;
         key++;
     }
-    printf("hash : %d \n", sum % hashmap_container->capacity);
     return sum % hashmap_container->capacity;
 }
 
