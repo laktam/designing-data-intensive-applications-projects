@@ -43,7 +43,7 @@ Learning project inspired by Designing Data-Intensive Applications
     - SSTable (disk): stores key + data in sorted order.
     - SSTable index (disk): stores key + offset to locate data in the SSTable.
 - summary of the paragraph "Constructing and merging SSTables"
-    1. Write: Add key-value pairs to a sorted in-memory structure (called a memtable) (i will use a skip list) .
+    1. Write: Add key-value pairs to a sorted in-memory structure (called a memtable) (i will use a skip list).
     2. Flush: When full (couple MBs), write the memtable to disk as a sorted SSTable with an index. Create a new memtable for new writes.
         - SSTable is divesed into blocks of few KBs and first key of each block is stored on the index (sparce index)
         - for index : i will use a sorted array of each block's first key and offset. Binary search the array to find the relevant block (other options are B tree, ...).
