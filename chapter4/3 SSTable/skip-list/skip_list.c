@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-
+#include <stdio.h>
 typedef struct SkipListNode
 {
     char* key;
@@ -15,9 +15,17 @@ typedef struct SkipList {
 } SkipList;
 
 SkipList* create_skip_list(int max_level) {
+    if(max_level <= 0) {
+        printf("max levels need to be greated than 0");
+        return NULL;
+    }
     // initialize randomness once in skip list creation
     srand(time(NULL));
     SkipList* skip_list = malloc(sizeof(*skip_list));
+    if(skip_list == NULL) {
+        printf("error creating skip list");
+        exit(1);
+    }
     skip_list->max_levels = max_level;
 
     skip_list->head = createSkipListNode(NULL, NULL, max_level);
@@ -27,6 +35,10 @@ SkipList* create_skip_list(int max_level) {
 SkipListNode* createSkipListNode(char* key, char* value, int max_level) {
     // space for head node + spacde for array pointers to max_levels nodes
     SkipListNode* new_node = malloc(sizeof(SkipListNode) + max_level * sizeof(SkipListNode*));
+    if(new_node == NULL) {
+        printf("error creating a new node"); 
+        exit(1);
+    }
     new_node->key = key;
     new_node->value = value;
     for(int i = 0; i < max_level; i++) {
@@ -43,49 +55,73 @@ SkipListNode* createSkipListNode(char* key, char* value, int max_level) {
 - randomly decide the levels it will participate in
 - make new node point to predecessor next node at each level
 - make predecessor point to new node
+
+how to seach ?
+start from the highest level
+- go to successor if it is less or equals to key
+- go down one level if it is bigger
 */
 void insert(char* key, char* value, SkipList* skip_list) {  
-    SkipListNode** predecessors = malloc(skip_list->max_levels * sizeof(SkipListNode*));
-    
+    SkipListNode** predecessors = calloc(skip_list->max_levels, sizeof(SkipListNode*));
+    if(predecessors == NULL) {
+        printf("error inserting to skip list");
+        exit(1);
+    }
+
     SkipListNode* head = skip_list->head;
-    for(int i = 0; i < skip_list->max_levels; i++) {
-        SkipListNode* tmp = head->nexts[i];
-        SkipListNode* pre = head;
-        while(tmp != NULL) {
-            if(strcmp(tmp->key, key) == 0) {
-                tmp->value = value;
-                free(predecessors);
-                return;
+
+    int new_node_level = 0;
+    for(int i = 0; i < skip_list->max_levels - 1; i++) {
+        int r = rand() % 2;
+        if(r == 1) new_node_level++;
+        else break;
+    }
+
+    int level = skip_list->max_levels - 1;
+    SkipListNode* current = head->nexts[level];
+    SkipListNode* pre = head;
+    while(level >= 0) {
+        // the case where there is no node on this level (pre is head)
+        // or we reached the end (pre is the node before the end)
+        if(current == NULL) {
+            predecessors[level] = pre;
+            // go back + go down + go forward
+            level--;
+            if(level >= 0) {
+                current = pre->nexts[level];
             }
-            else if(strcmp(tmp->key, key)  > 0) {
-                break;
-            }
-            pre = tmp;
-            tmp = tmp->nexts[i];
         }
-        predecessors[i] = pre;
+        else if(strcmp(current->key, key) == 0){
+            // found a match change value and return;
+            current->value = value;
+            free(predecessors);
+            return;
+        }
+        else if(strcmp(current->key, key) < 0){
+            // keep going on same level
+            pre = current;
+            current = pre->nexts[level];
+        }
+        else {
+            // current node key is bigger
+            // go back + go down + go forward
+            predecessors[level] = pre;
+            level--;
+            if(level >= 0) {
+                current = pre->nexts[level];
+            }
+        }
+
+
     }
 
     SkipListNode* new_node = createSkipListNode(key, value, skip_list->max_levels);
-    int new_node_level = 0;
-    for(int i = 0; i < skip_list->max_levels; i++) {
-        int r = rand() % 2;
-        if(r == 1 || i == 0) {
-            if(predecessors[i] != NULL) {
-                new_node->nexts[i] = predecessors[i]->nexts[i];
-            }
-            else {
-                new_node->nexts[i] = head->nexts[i];
-            }
-            new_node_level++;
-        }
-        else {
-            break;
-        }
-    }
-
-    for(int i = 0; i < new_node_level; i++) {
+    for(int i = 0; i <= new_node_level; i++) {
+        // make new node point to predecessor next node at each level
+        new_node->nexts[i] = predecessors[i]->nexts[i];      
+        // make predecessors point to new node
         predecessors[i]->nexts[i] = new_node;
     }
+    
     free(predecessors);
 }
