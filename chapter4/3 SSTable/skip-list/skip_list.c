@@ -2,17 +2,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
-typedef struct SkipListNode
-{
-    char* key;
-    char* value;
-    struct SkipListNode* nexts[]; // array of pointers to next nodes, one for each level
-} SkipListNode;
-
-typedef struct SkipList {
-    SkipListNode* head;
-    int max_levels;
-} SkipList;
+#include "skip_list.h"
 
 SkipList* create_skip_list(int max_level) {
     if(max_level <= 0) {
@@ -124,4 +114,56 @@ void insert(char* key, char* value, SkipList* skip_list) {
     }
     
     free(predecessors);
+}
+
+// assuming keys are just one char, to make a well structured print
+// use padding latter for bigger keys
+void print_skip_list(SkipList* skip_list) {
+    char** lines = malloc(skip_list->max_levels * sizeof(char*));
+    if(lines == NULL) {
+        exit(1);
+    }
+
+    for(int level = 0; level < skip_list->max_levels; level++) {
+        lines[level] = malloc(sizeof(char) * 200);
+        if(lines[level] == NULL) {
+            exit(1);
+        }
+    }
+
+    int global_cursor = 0;
+    SkipListNode* current = skip_list->head;
+    SkipListNode* pre = skip_list->head;
+    while(current != NULL) {
+        for(int level = 0; level < skip_list->max_levels; level++) {
+            int cursor = 0 + global_cursor;
+            // a node is only printed on a level if the previeus node point to it
+            if(current->key != NULL && (pre->nexts[level] == current || pre == current)) {
+                lines[level][cursor] = current->key[0];
+            }
+            else {
+                lines[level][cursor] = ' ';
+            }
+            cursor++;
+            lines[level][cursor] = '-';
+            //strcpy(lines[level] + cursor, '-');
+            cursor++;
+            lines[level][cursor] = '>';
+            //strcpy(lines[level] + cursor, '>');
+            cursor++;
+            
+            if(level == skip_list->max_levels - 1) {
+                global_cursor = cursor;
+            }
+        }  
+        pre = current;
+        current = pre->nexts[0]; // traverse the level 0 as it is the one that has all the nodes
+    }
+
+    for(int level = 0; level < skip_list->max_levels; level++) {
+        lines[level][global_cursor] = '\0';
+    }
+    for(int level = skip_list->max_levels - 1; level >= 0 ; level--) {
+        printf("%s\n", lines[level]);
+    }
 }
