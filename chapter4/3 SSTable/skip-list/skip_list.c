@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "skip_list.h"
 
-SkipList* create_skip_list(int max_level) {
+SkipList* create_skip_list(int max_level, size_t max_size) {
     if(max_level <= 0) {
         printf("max levels need to be greated than 0");
         return NULL;
@@ -16,9 +16,17 @@ SkipList* create_skip_list(int max_level) {
         printf("error creating skip list");
         exit(1);
     }
-    skip_list->max_levels = max_level;
-
+    
+    // size of skip list stsruct
+    size_t size = sizeof(SkipList);
+    // size of head (the struct + dynamic nexts array)
+    size += sizeof(SkipListNode) + sizeof(SkipListNode*) * max_level;
+    printf("size of creation %d\n", size);
+    
     skip_list->head = createSkipListNode(NULL, NULL, max_level);
+    skip_list->max_levels = max_level;
+    skip_list->size = size;
+    skip_list->max_size = max_size;
     return skip_list;
 }
 
@@ -114,6 +122,14 @@ void put(char* key, char* value, SkipList* skip_list) {
     }
     
     free(predecessors);
+    // add size of node and array of pointers
+    // size of struct + key + value + nexts array
+    skip_list->size = skip_list->size 
+        + sizeof(SkipListNode) 
+        + strlen(key) + 1
+        + strlen(value) + 1
+        + sizeof(SkipListNode*) * skip_list->max_levels; 
+    printf("size after put %d\n", skip_list->size);
 }
 
 // assuming keys are just one char, to make a well structured print

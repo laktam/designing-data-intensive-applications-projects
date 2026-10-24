@@ -3,7 +3,7 @@
 #include "skip-list/skip_list.h"
 
 int main() {
-    SkipList* skip_list = create_skip_list(4);
+    SkipList* skip_list = create_skip_list(4, 1024);
     put("b", "b", skip_list);
     put("a", "a", skip_list);
     put("d", "d", skip_list);
