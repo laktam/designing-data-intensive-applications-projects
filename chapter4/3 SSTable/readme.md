@@ -1,6 +1,6 @@
 ## Skip list
-https://www.youtube.com/watch?v=VctNQi7WCkE
-https://www.youtube.com/watch?v=NDGpsfwAaqo
+- https://www.youtube.com/watch?v=VctNQi7WCkE
+- https://www.youtube.com/watch?v=NDGpsfwAaqo
 
 skip list printing example
 1. max level = 4

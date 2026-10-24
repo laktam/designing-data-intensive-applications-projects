@@ -51,7 +51,7 @@ start from the highest level
 - go to successor if it is less or equals to key
 - go down one level if it is bigger
 */
-void insert(char* key, char* value, SkipList* skip_list) {  
+void put(char* key, char* value, SkipList* skip_list) {  
     SkipListNode** predecessors = calloc(skip_list->max_levels, sizeof(SkipListNode*));
     if(predecessors == NULL) {
         printf("error inserting to skip list");
@@ -166,4 +166,26 @@ void print_skip_list(SkipList* skip_list) {
     for(int level = skip_list->max_levels - 1; level >= 0 ; level--) {
         printf("%s\n", lines[level]);
     }
+}
+
+char* get(char* key, SkipList* skip_list) {
+    SkipListNode* current = skip_list->head;
+    SkipListNode* pre = skip_list->head;
+
+    int level = skip_list->max_levels - 1;
+    while(current != NULL && level >= 0) {
+        if(current->key == NULL || strcmp(current->key, key) > 0) {
+            current = pre;
+            level--;
+            current = current->nexts[level];
+        }
+        else if(strcmp(current->key, key) == 0) {
+            return current->value;
+        }
+        else if(strcmp(current->key, key) < 0) {
+            pre = current;
+            current = current->nexts[level];
+        }
+    }
+    return NULL;
 }

@@ -1,22 +1,25 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "skip-list/skip_list.h"
 
 int main() {
     SkipList* skip_list = create_skip_list(4);
-    insert("b", "b", skip_list);
-    insert("a", "b", skip_list);
-    insert("d", "b", skip_list);
-    insert("g", "b", skip_list);
-    insert("g", "b", skip_list);
-    insert("k", "b", skip_list);
-    insert("e", "b", skip_list);
-    insert("t", "b", skip_list);
-    insert("y", "b", skip_list);
-    insert("u", "b", skip_list);
-    insert("i", "b", skip_list);
-    insert("o", "b", skip_list);
-    insert("p", "b", skip_list);
-    insert("m", "b", skip_list);
-    insert("l", "b", skip_list);
+    put("b", "b", skip_list);
+    put("a", "a", skip_list);
+    put("d", "d", skip_list);
+    put("g", "g", skip_list);
+    put("g", "g", skip_list);
+    put("k", "k", skip_list);
+    put("e", "e", skip_list);
+    put("t", "t", skip_list);
+    put("y", "y", skip_list);
+    put("u", "u", skip_list);
+    put("i", "i", skip_list);
+    put("o", "b", skip_list);
+    put("p", "p", skip_list);
+    put("m", "m", skip_list);
+    put("g", "test value", skip_list);
     print_skip_list(skip_list);
+
+    printf("%s", get("g", skip_list));
 }
