@@ -181,7 +181,9 @@ void print_skip_list(SkipList* skip_list) {
     }
     for(int level = skip_list->max_levels - 1; level >= 0 ; level--) {
         printf("%s\n", lines[level]);
+        free(lines[level]);
     }
+    free(lines);
 }
 
 char* get(char* key, SkipList* skip_list) {
@@ -204,4 +206,8 @@ char* get(char* key, SkipList* skip_list) {
         }
     }
     return NULL;
+}
+
+void write(SkipList* skip_list) {
+
 }
