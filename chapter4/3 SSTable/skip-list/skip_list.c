@@ -208,6 +208,45 @@ char* get(char* key, SkipList* skip_list) {
     return NULL;
 }
 
-void write(SkipList* skip_list) {
+// each record is writen as (key size, key data, value size, value data)
+// when wrting a record will exceed block max size :
+//  - add the sirt record key to then index with starting offset and size of the block 
+void write(SkipList* skip_list, int max_block_size) {
+    if(skip_list->head == NULL || skip_list->head->nexts[0] == NULL) {
+        printf("error writing skip list to SSTable");
+        exit(1);
+    }
+    SkipListNode* current = skip_list->head->nexts[0];
+    // use current timestamp or just an encremented value
+    FILE* file_p = fopen("db.bin", "ab");
+    int block_size = 0;
+    char* first_key = NULL;
+    long first_key_offset = -1L; 
+    while(current != NULL) {
+        long position = ftell(file_p);
+        if(position = -1L) {
+            printf("error writing skip list to SSTable");
+            exit(1);
+        }
+        int key_size =  strlen(current->key);
+        int value_size = strlen(current->value);
+        fwrite(&key_size, 4, 1, file_p);
+        fwrite(current->key, key_size, 1, file_p);
+        fwrite(&value_size, 4, 1, file_p);
+        fwrite(current->value, value_size, 1, file_p);
+        block_size += 4 + 4 + key_size + value_size;
 
+        // write first key of the block and its offset
+        if(first_key == NULL) {
+            first_key = current->key;
+            first_key_offset = position;
+        }
+        if(block_size >= max_block_size) {
+            // reset first key
+            first_key = NULL;
+            first_key_offset = -1L;
+            // add key and size and offset to index
+            
+        }
+    }
 }
