@@ -210,14 +210,20 @@ char* get(char* key, SkipList* skip_list) {
 
 // each record is writen as (key size, key data, value size, value data)
 // when wrting a record will exceed block max size :
-//  - add the sirt record key to then index with starting offset and size of the block 
+//  - add the firt record key to then index with starting offset
+// put the index at the end, and put its size and offset at the verry end (footer) of the file
 void write(SkipList* skip_list, int max_block_size) {
     if(skip_list->head == NULL || skip_list->head->nexts[0] == NULL) {
         printf("error writing skip list to SSTable");
         exit(1);
     }
     SkipListNode* current = skip_list->head->nexts[0];
-    // use current timestamp or just an encremented value
+    int index_capacity = 16;
+    int index_size = 0;
+    // when index_size == index_capacity double the capacity
+    IndexEntry** index_items = malloc(sizeof(IndexEntry*) * index_capacity);
+
+    // use current timestamp or just an encremented value for the name
     FILE* file_p = fopen("db.bin", "ab");
     int block_size = 0;
     char* first_key = NULL;
@@ -234,19 +240,45 @@ void write(SkipList* skip_list, int max_block_size) {
         fwrite(current->key, key_size, 1, file_p);
         fwrite(&value_size, 4, 1, file_p);
         fwrite(current->value, value_size, 1, file_p);
-        block_size += 4 + 4 + key_size + value_size;
 
-        // write first key of the block and its offset
+        int current_entry_size = 4 + 4 + key_size + value_size;
+
+        // first key of the block and its offset
         if(first_key == NULL) {
             first_key = current->key;
             first_key_offset = position;
         }
-        if(block_size >= max_block_size) {
-            // reset first key
+
+        // write the entry in a stand alone block
+        if(current_entry_size >= max_block_size) {
+            
+        }
+        // end the block if adding it will exced the max size a new block if 
+        else if(block_size + current_entry_size > max_block_size) {
+            
+            // add key and size and offset to index
+            IndexEntry* index_entry = malloc(sizeof(IndexEntry));
+            if(index_entry == NULL) exit(1);
+            index_entry->key = first_key;
+            index_entry->offset = first_key_offset;
+
+            if(index_size == index_capacity) {
+                // duplicate
+                IndexEntry* tmp[] = realloc(index_items, index_capacity * 2);
+                if(tmp == NULL) exit(1);
+                index_items = tmp;
+                index_capacity = index_capacity * 2;
+            }
+            else {
+                index_items[index_size++] = index_entry;
+            }
+            // reset first key and block size
             first_key = NULL;
             first_key_offset = -1L;
-            // add key and size and offset to index
-            
+            block_size = 0;
+        }
+        else {
+            block_size += current_entry_size;
         }
     }
 }

@@ -41,7 +41,7 @@ Learning project inspired by Designing Data-Intensive Applications
 - data structures :
     - Skip list (memtable in RAM): stores key + data in sorted order.
     - SSTable (disk): stores key + data in sorted order.
-    - SSTable index (disk): stores key + offset to locate data in the SSTable.
+    - SSTable index (disk): stores key + offset to locate data in the SSTable (sorted array with binary search).
 - summary of the paragraph "Constructing and merging SSTables"
     1. Write: Add key-value pairs to a sorted in-memory structure (called a memtable) (i will use a skip list).
     2. Flush: When full (couple MBs), write the memtable to disk as a sorted SSTable with an index. Create a new memtable for new writes.
