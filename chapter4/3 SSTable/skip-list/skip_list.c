@@ -220,6 +220,7 @@ void write(SkipList* skip_list, int max_block_size) {
     SkipListNode* current = skip_list->head->nexts[0];
     int index_capacity = 16;
     int index_size = 0;
+    int index_bytes_size = 0;
     // when index_size == index_capacity double the capacity
     IndexEntry** index_items = malloc(sizeof(IndexEntry*) * index_capacity);
 
@@ -244,26 +245,21 @@ void write(SkipList* skip_list, int max_block_size) {
         int current_entry_size = 4 + 4 + key_size + value_size;
 
         // first key of the block and its offset
-        if(first_key == NULL) {
+        if(block_size == 0) {
             first_key = current->key;
             first_key_offset = position;
         }
 
-        // write the entry in a stand alone block
-        if(current_entry_size >= max_block_size) {
-            
-        }
-        // end the block if adding it will exced the max size a new block if 
-        else if(block_size + current_entry_size > max_block_size) {
-            
-            // add key and size and offset to index
+        // when we reach the block size we add and index entry
+        if(block_size == 0) {
+            // add key and offset to index
             IndexEntry* index_entry = malloc(sizeof(IndexEntry));
             if(index_entry == NULL) exit(1);
             index_entry->key = first_key;
             index_entry->offset = first_key_offset;
 
             if(index_size == index_capacity) {
-                // duplicate
+                // expande the index array
                 IndexEntry* tmp[] = realloc(index_items, index_capacity * 2);
                 if(tmp == NULL) exit(1);
                 index_items = tmp;
@@ -272,13 +268,36 @@ void write(SkipList* skip_list, int max_block_size) {
             else {
                 index_items[index_size++] = index_entry;
             }
-            // reset first key and block size
-            first_key = NULL;
-            first_key_offset = -1L;
-            block_size = 0;
-        }
-        else {
+            index_bytes_size += strlen(first_key) + sizeof(long);
+
             block_size += current_entry_size;
+            // reset first key and block size
+            if(block_size >= max_block_size) {
+                first_key = NULL;
+                first_key_offset = -1L;
+                block_size = 0;
+            }
         }
     }
+
+    // write the index
+    long index_position = ftell(file_p);
+    if(index_position = -1L) {
+        printf("error writing skip list to SSTable");
+        exit(1);
+    }
+
+    int offset_size = 8;
+    for(int i = 0; i < index_position; i++) {
+        char* key = index_items[i]->key;
+        int key_size = strlen(key);
+        long offset = index_items[i]->offset;
+        int offset_size = sizeof(long);
+        fwrite(&key_size, 4, 1, file_p);
+        fwrite(key, key_size, 1, file_p);
+        fwrite(&offset_size, offset_size, 1, file_p);
+    }
+    // write index size and offset at the end
+    fwrite(&index_bytes_size, 4, 1, file_p);
+    fwrite(&index_position, offset_size, 1, file_p);
 }
