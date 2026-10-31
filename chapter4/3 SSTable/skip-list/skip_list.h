@@ -13,6 +13,7 @@ typedef struct SkipList {
     int max_levels;
     size_t size; // in bytes
     size_t max_size;
+    size_t max_block_size;
 } SkipList;
 
 typedef struct IndexEntry {
@@ -20,7 +21,7 @@ typedef struct IndexEntry {
     long offset;
 } IndexEntry;
 
-SkipList* create_skip_list(int max_level, size_t max_size);
+SkipList* create_skip_list(int max_level, size_t max_size, size_t max_block_size);
 SkipListNode* createSkipListNode(char* key, char* value, int max_level);
 void put(char* key, char* value, SkipList* skip_list);
 void print_skip_list(SkipList* skip_list);

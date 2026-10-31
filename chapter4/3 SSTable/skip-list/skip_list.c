@@ -4,7 +4,9 @@
 #include <stdio.h>
 #include "skip_list.h"
 
-SkipList* create_skip_list(int max_level, size_t max_size) {
+void write(SkipList* skip_list);
+
+SkipList* create_skip_list(int max_level, size_t max_size, size_t max_block_size) {
     if(max_level <= 0) {
         printf("max levels need to be greated than 0");
         return NULL;
@@ -27,6 +29,7 @@ SkipList* create_skip_list(int max_level, size_t max_size) {
     skip_list->max_levels = max_level;
     skip_list->size = size;
     skip_list->max_size = max_size;
+    skip_list->max_block_size = max_block_size;
     return skip_list;
 }
 
@@ -59,7 +62,9 @@ start from the highest level
 - go to successor if it is less or equals to key
 - go down one level if it is bigger
 */
-void put(char* key, char* value, SkipList* skip_list) {  
+void put(char* k, char* v, SkipList* skip_list) {  
+    char* key = strdup(k);
+    char* value = strdup(v);
     SkipListNode** predecessors = calloc(skip_list->max_levels, sizeof(SkipListNode*));
     if(predecessors == NULL) {
         printf("error inserting to skip list");
@@ -90,9 +95,11 @@ void put(char* key, char* value, SkipList* skip_list) {
             }
         }
         else if(strcmp(current->key, key) == 0){
-            // found a match change value and return;
+            // found a match update size, change value and return;
+            skip_list->size = skip_list->size - strlen(current->value) + strlen(value);
             current->value = value;
             free(predecessors);
+            printf("size after put %d\n", skip_list->size);
             return;
         }
         else if(strcmp(current->key, key) < 0){
@@ -130,6 +137,9 @@ void put(char* key, char* value, SkipList* skip_list) {
         + strlen(value) + 1
         + sizeof(SkipListNode*) * skip_list->max_levels; 
     printf("size after put %d\n", skip_list->size);
+    // if(skip_list->size >= skip_list->max_size) {
+    //     write(skip_list);
+    // }
 }
 
 // assuming keys are just one char, to make a well structured print
@@ -212,7 +222,8 @@ char* get(char* key, SkipList* skip_list) {
 // when wrting a record will exceed block max size :
 //  - add the firt record key to then index with starting offset
 // put the index at the end, and put its size and offset at the verry end (footer) of the file
-void write(SkipList* skip_list, int max_block_size) {
+void write(SkipList* skip_list) {
+    printf("writing skip list\n");
     if(skip_list->head == NULL || skip_list->head->nexts[0] == NULL) {
         printf("error writing skip list to SSTable");
         exit(1);
@@ -272,7 +283,7 @@ void write(SkipList* skip_list, int max_block_size) {
 
             block_size += current_entry_size;
             // reset first key and block size
-            if(block_size >= max_block_size) {
+            if(block_size >= skip_list->max_block_size) {
                 first_key = NULL;
                 first_key_offset = -1L;
                 block_size = 0;
@@ -300,4 +311,5 @@ void write(SkipList* skip_list, int max_block_size) {
     // write index size and offset at the end
     fwrite(&index_bytes_size, 4, 1, file_p);
     fwrite(&index_position, offset_size, 1, file_p);
+    printf("skip list write done\n");
 }
