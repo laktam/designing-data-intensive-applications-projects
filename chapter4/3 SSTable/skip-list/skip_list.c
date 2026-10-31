@@ -201,10 +201,12 @@ char* get(char* key, SkipList* skip_list) {
     SkipListNode* pre = skip_list->head;
 
     int level = skip_list->max_levels - 1;
-    while(current != NULL && level >= 0) {
-        if(current->key == NULL || strcmp(current->key, key) > 0) {
+    while(level >= 0) {
+        // current == NULL : we reached the end, go back and down
+        if(current == NULL || current->key == NULL || strcmp(current->key, key) > 0) {
             current = pre;
             level--;
+            if(level < 0) return NULL;
             current = current->nexts[level];
         }
         else if(strcmp(current->key, key) == 0) {
@@ -237,12 +239,12 @@ void write(SkipList* skip_list) {
 
     // use current timestamp or just an encremented value for the name
     FILE* file_p = fopen("db.bin", "ab");
-    int block_size = 0;
+    size_t block_size = 0;
     char* first_key = NULL;
     long first_key_offset = -1L; 
     while(current != NULL) {
         long position = ftell(file_p);
-        if(position = -1L) {
+        if(position == -1L) {
             printf("error writing skip list to SSTable");
             exit(1);
         }
@@ -293,7 +295,7 @@ void write(SkipList* skip_list) {
 
     // write the index
     long index_position = ftell(file_p);
-    if(index_position = -1L) {
+    if(index_position == -1L) {
         printf("error writing skip list to SSTable");
         exit(1);
     }
@@ -306,7 +308,7 @@ void write(SkipList* skip_list) {
         int offset_size = sizeof(long);
         fwrite(&key_size, 4, 1, file_p);
         fwrite(key, key_size, 1, file_p);
-        fwrite(&offset_size, offset_size, 1, file_p);
+        fwrite(&offset, offset_size, 1, file_p);
     }
     // write index size and offset at the end
     fwrite(&index_bytes_size, 4, 1, file_p);
