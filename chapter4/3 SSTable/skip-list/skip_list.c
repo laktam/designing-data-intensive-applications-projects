@@ -137,9 +137,9 @@ void put(char* k, char* v, SkipList* skip_list) {
         + strlen(value) + 1
         + sizeof(SkipListNode*) * skip_list->max_levels; 
     printf("size after put %d\n", skip_list->size);
-    // if(skip_list->size >= skip_list->max_size) {
-    //     write(skip_list);
-    // }
+    if(skip_list->size >= skip_list->max_size) {
+        write(skip_list);
+    }
 }
 
 // assuming keys are just one char, to make a well structured print
@@ -240,6 +240,7 @@ void write(SkipList* skip_list) {
     // use current timestamp or just an encremented value for the name
     FILE* file_p = fopen("db.bin", "ab");
     size_t block_size = 0;
+    // first key of the block
     char* first_key = NULL;
     long first_key_offset = -1L; 
     while(current != NULL) {
@@ -255,7 +256,7 @@ void write(SkipList* skip_list) {
         fwrite(&value_size, 4, 1, file_p);
         fwrite(current->value, value_size, 1, file_p);
 
-        int current_entry_size = 4 + 4 + key_size + value_size;
+        int current_element_size = 4 + 4 + key_size + value_size;
 
         // first key of the block and its offset
         if(block_size == 0) {
@@ -273,24 +274,28 @@ void write(SkipList* skip_list) {
 
             if(index_size == index_capacity) {
                 // expande the index array
-                IndexEntry** tmp = realloc(index_items, index_capacity * 2);
+                IndexEntry** tmp = realloc(index_items, index_capacity * 2 * sizeof(IndexEntry*));
                 if(tmp == NULL) exit(1);
                 index_items = tmp;
                 index_capacity = index_capacity * 2;
+                index_items[index_size++] = index_entry;
             }
             else {
                 index_items[index_size++] = index_entry;
             }
             index_bytes_size += strlen(first_key) + sizeof(long);
-
-            block_size += current_entry_size;
-            // reset first key and block size
-            if(block_size >= skip_list->max_block_size) {
-                first_key = NULL;
-                first_key_offset = -1L;
-                block_size = 0;
-            }
         }
+        // all elements should be counted in block size not just index element
+        block_size += current_element_size;
+
+        // reset first key and block size
+        if(block_size >= skip_list->max_block_size) {
+            first_key = NULL;
+            first_key_offset = -1L;
+            block_size = 0;
+        }
+
+        current = current->nexts[0];
     }
 
     // write the index
@@ -301,7 +306,7 @@ void write(SkipList* skip_list) {
     }
 
     int offset_size = 8;
-    for(int i = 0; i < index_position; i++) {
+    for(int i = 0; i < index_size; i++) {
         char* key = index_items[i]->key;
         int key_size = strlen(key);
         long offset = index_items[i]->offset;
@@ -313,5 +318,6 @@ void write(SkipList* skip_list) {
     // write index size and offset at the end
     fwrite(&index_bytes_size, 4, 1, file_p);
     fwrite(&index_position, offset_size, 1, file_p);
+    fclose(file_p);
     printf("skip list write done\n");
 }

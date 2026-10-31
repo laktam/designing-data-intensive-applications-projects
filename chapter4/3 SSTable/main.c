@@ -4,7 +4,7 @@
 #include "skip-list/skip_list.h"
 
 int main() {
-    SkipList* skip_list = create_skip_list(4, 10024, 3000);
+    SkipList* skip_list = create_skip_list(4, 300, 100);
     while(1) {
         printf(">");
         char input[100];
