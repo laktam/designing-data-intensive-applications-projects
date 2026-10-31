@@ -260,7 +260,7 @@ void write(SkipList* skip_list, int max_block_size) {
 
             if(index_size == index_capacity) {
                 // expande the index array
-                IndexEntry* tmp[] = realloc(index_items, index_capacity * 2);
+                IndexEntry** tmp = realloc(index_items, index_capacity * 2);
                 if(tmp == NULL) exit(1);
                 index_items = tmp;
                 index_capacity = index_capacity * 2;
