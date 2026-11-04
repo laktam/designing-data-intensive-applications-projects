@@ -232,6 +232,8 @@ char* getFromDisk(char* key) {
     int index_size = -1;
     fseek(file, -12, SEEK_END); // -8 and -4  |index size (4)|offset (8)|
     fread(&index_size, 4, 1, file);
+    printf("reading index size %d\n", index_size);
+    printf("reading index position %d\n", index_offset);
     // load index
     if(index_offset == -1L || index_size == -1) exit(1);
     fseek(file, index_offset, SEEK_SET);
@@ -241,8 +243,8 @@ char* getFromDisk(char* key) {
     for(int i = 0; i < index_size; i++){
         int key_size = 0;
         fread(&key_size, 4, 1, file);
-        char* key_value = malloc(key_size);
-        fwrite(key_value, key_size + 1, 1, file);
+        char* key_value = malloc(key_size + 1);
+        fread(key_value, key_size + 1, 1, file);
         key_value[key_size] = '\0';
 
         long offset = -1L;
@@ -250,9 +252,12 @@ char* getFromDisk(char* key) {
 
         IndexEntry* index_entry = malloc(sizeof(IndexEntry) + key_size + 1);
         index_entry->key = key_value;
+        printf("key value: %s\n", key_value);
         index_entry->offset = offset;
-    }
 
+        index[i] = index_entry;
+    }
+    return NULL;
 }
 
 // each record is writen as (key size, key data, value size, value data)
@@ -340,6 +345,8 @@ void write(SkipList* skip_list) {
 
     // write the index
     long index_position = ftell(file_p);
+    printf("writing index position: %d\n", index_position);
+    printf("writing index size: %d\n", index_size);
     if(index_position == -1L) {
         printf("error writing skip list to SSTable");
         exit(1);
@@ -350,7 +357,7 @@ void write(SkipList* skip_list) {
         char* key = index_items[i]->key;
         int key_size = strlen(key);
         long offset = index_items[i]->offset;
-        int offset_size = sizeof(long);
+
         fwrite(&key_size, 4, 1, file_p);
         fwrite(key, key_size, 1, file_p);
         fwrite(&offset, offset_size, 1, file_p);
