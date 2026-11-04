@@ -220,10 +220,50 @@ char* get(char* key, SkipList* skip_list) {
     return NULL;
 }
 
+char* getFromDisk(char* key) {
+    FILE* file = fopen("db.bin", "r");
+    if(file == NULL) exit(1);
+
+    // get index position
+    long index_offset = -1L;
+    fseek(file, -8, SEEK_END);
+    fread(&index_offset, 8, 1, file);
+    // get nbr of elements
+    int index_size = -1;
+    fseek(file, -12, SEEK_END); // -8 and -4  |index size (4)|offset (8)|
+    fread(&index_size, 4, 1, file);
+    // load index
+    if(index_offset == -1L || index_size == -1) exit(1);
+    fseek(file, index_offset, SEEK_SET);
+    
+    IndexEntry** index = malloc(index_size * sizeof(IndexEntry));
+    
+    for(int i = 0; i < index_size; i++){
+        int key_size = 0;
+        fread(&key_size, 4, 1, file);
+        char* key_value = malloc(key_size);
+        fwrite(key_value, key_size + 1, 1, file);
+        key_value[key_size] = '\0';
+
+        long offset = -1L;
+        fread(&offset, 8, 1, file);
+
+        IndexEntry* index_entry = malloc(sizeof(IndexEntry) + key_size + 1);
+        index_entry->key = key_value;
+        index_entry->offset = offset;
+    }
+
+}
+
 // each record is writen as (key size, key data, value size, value data)
 // when wrting a record will exceed block max size :
 //  - add the firt record key to then index with starting offset
 // put the index at the end, and put its size and offset at the verry end (footer) of the file
+// structure :
+// - data :|key size 4|key value|value size 4|value content|
+// - indext|key size 4|key|offset 8|
+// at the end we put the size of the index and start offset :
+// - |index size (nbr of elements) 4|index offset 8|
 void write(SkipList* skip_list) {
     printf("writing skip list\n");
     if(skip_list->head == NULL || skip_list->head->nexts[0] == NULL) {
@@ -316,7 +356,7 @@ void write(SkipList* skip_list) {
         fwrite(&offset, offset_size, 1, file_p);
     }
     // write index size and offset at the end
-    fwrite(&index_bytes_size, 4, 1, file_p);
+    fwrite(&index_size, 4, 1, file_p);
     fwrite(&index_position, offset_size, 1, file_p);
     fclose(file_p);
     printf("skip list write done\n");
