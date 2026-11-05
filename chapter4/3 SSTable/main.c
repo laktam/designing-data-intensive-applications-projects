@@ -26,7 +26,7 @@ int main() {
             printf("%s\n", result);
         }
         else if(strcmp(command, "getdisk") == 0){
-            char* result = getFromDisk(key);
+            char* result = getFromDisk(key, skip_list);
             printf("%s\n", result);
         }
         else if(strcmp(command, "print") == 0){

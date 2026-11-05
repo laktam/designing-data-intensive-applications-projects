@@ -26,6 +26,6 @@ SkipListNode* createSkipListNode(char* key, char* value, int max_level);
 void put(char* key, char* value, SkipList* skip_list);
 void print_skip_list(SkipList* skip_list);
 char* get(char* key, SkipList* skip_list);
-char* getFromDisk(char* key);
+char* getFromDisk(char* key, SkipList* skip_list);
 
 #endif

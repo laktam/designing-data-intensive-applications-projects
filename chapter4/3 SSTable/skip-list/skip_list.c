@@ -5,6 +5,7 @@
 #include "skip_list.h"
 
 void write(SkipList* skip_list);
+char* readElement(FILE* file);
 
 SkipList* create_skip_list(int max_level, size_t max_size, size_t max_block_size) {
     if(max_level <= 0) {
@@ -220,7 +221,7 @@ char* get(char* key, SkipList* skip_list) {
     return NULL;
 }
 
-char* getFromDisk(char* key) {
+char* getFromDisk(char* key, SkipList* skip_list) {
     FILE* file = fopen("db.bin", "r");
     if(file == NULL) exit(1);
 
@@ -244,21 +245,71 @@ char* getFromDisk(char* key) {
         int key_size = 0;
         fread(&key_size, 4, 1, file);
         char* key_value = malloc(key_size + 1);
-        fread(key_value, key_size + 1, 1, file);
+        fread(key_value, key_size, 1, file);
         key_value[key_size] = '\0';
 
         long offset = -1L;
         fread(&offset, 8, 1, file);
 
-        IndexEntry* index_entry = malloc(sizeof(IndexEntry) + key_size + 1);
+        IndexEntry* index_entry = malloc(sizeof(IndexEntry));
         index_entry->key = key_value;
         printf("key value: %s\n", key_value);
         index_entry->offset = offset;
 
         index[i] = index_entry;
     }
+
+    // binary search to find the key smaller or equal to the search key
+    int left  = 0;
+    int right = index_size - 1;
+    long search_offset = -1L;
+    while(left <= right) {
+        int mid = (left + right) / 2;
+        if(strcmp(index[mid]->key, key) == 0) {
+            fseek(file, index[mid]->offset, SEEK_SET);
+            readElement(file);// skip the key
+            char* value = readElement(file);
+            printf("value offset %d \n", index[mid]->offset);
+            printf("value from disk 1 %s \n", value);
+            return value;
+        }
+        else if(strcmp(index[mid]->key, key) > 0) {
+            right = mid - 1;
+        }
+        else {
+            // get the last smaller element than the search key
+            search_offset = index[mid]->offset;
+            left = mid + 1;
+        }
+    }
+    // scan the block to see if the element exist 
+    fseek(file, search_offset, SEEK_SET);
+    long max = search_offset + skip_list->max_block_size;
+    while(search_offset < max) {
+        char* key_value = readElement(file);
+
+        if(key_value != NULL && strcmp(key, key_value) == 0) {
+            char* value = readElement(file);
+            printf("value from disk 2 %s \n", value);
+            return value;
+        }
+        search_offset = ftell(file);
+    }
+
     return NULL;
 }
+
+// get the key or value size then the content of the key or value and return it
+// seek to correct position before using
+char* readElement(FILE* file) {
+    int size = 0;
+    fread(&size, 4, 1, file);
+    char* content = malloc(size + 1);
+    fread(content, size, 1, file);
+    content[size] = '\0';
+    return content;
+}
+
 
 // each record is writen as (key size, key data, value size, value data)
 // when wrting a record will exceed block max size :
@@ -316,7 +367,9 @@ void write(SkipList* skip_list) {
             if(index_entry == NULL) exit(1);
             index_entry->key = first_key;
             index_entry->offset = first_key_offset;
-
+            printf("\n");
+            printf("index entry key : %s\n", first_key);
+            printf("index entry offset : %d\n", first_key_offset);
             if(index_size == index_capacity) {
                 // expande the index array
                 IndexEntry** tmp = realloc(index_items, index_capacity * 2 * sizeof(IndexEntry*));
