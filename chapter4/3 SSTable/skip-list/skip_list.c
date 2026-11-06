@@ -6,6 +6,7 @@
 
 void write(SkipList* skip_list);
 char* readElement(FILE* file);
+void destroy(SkipListNode* head);
 
 SkipList* create_skip_list(int max_level, size_t max_size, size_t max_block_size) {
     if(max_level <= 0) {
@@ -140,6 +141,11 @@ void put(char* k, char* v, SkipList* skip_list) {
     printf("size after put %d\n", skip_list->size);
     if(skip_list->size >= skip_list->max_size) {
         write(skip_list);
+        // free the skip list nodes
+        destroy(skip_list->head);
+        // create new skip list head
+        SkipListNode* new_head = createSkipListNode(NULL, NULL, skip_list->max_levels);
+        skip_list->head = new_head;
     }
 }
 
@@ -207,7 +213,7 @@ char* get(char* key, SkipList* skip_list) {
         if(current == NULL || current->key == NULL || strcmp(current->key, key) > 0) {
             current = pre;
             level--;
-            if(level < 0) return NULL;
+            if(level < 0) break;
             current = current->nexts[level];
         }
         else if(strcmp(current->key, key) == 0) {
@@ -420,4 +426,14 @@ void write(SkipList* skip_list) {
     fwrite(&index_position, offset_size, 1, file_p);
     fclose(file_p);
     printf("skip list write done\n");
+}
+
+void destroy(SkipListNode* head) {
+    while(head != NULL) {
+        SkipListNode* tmp = head->nexts[0];
+        free(head->key);
+        free(head->value);
+        free(head);
+        head = tmp;
+    }
 }
