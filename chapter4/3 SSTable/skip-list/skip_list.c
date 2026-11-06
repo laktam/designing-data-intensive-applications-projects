@@ -218,7 +218,7 @@ char* get(char* key, SkipList* skip_list) {
             current = current->nexts[level];
         }
     }
-    return NULL;
+    return getFromDisk(key, skip_list);
 }
 
 char* getFromDisk(char* key, SkipList* skip_list) {
@@ -381,7 +381,7 @@ void write(SkipList* skip_list) {
             else {
                 index_items[index_size++] = index_entry;
             }
-            index_bytes_size += strlen(first_key) + sizeof(long);
+            index_bytes_size += strlen(first_key) + 8;
         }
         // all elements should be counted in block size not just index element
         block_size += current_element_size;
