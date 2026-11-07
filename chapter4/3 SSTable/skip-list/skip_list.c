@@ -2,11 +2,13 @@
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
+#include <dirent.h>
 #include "skip_list.h"
 
-void write(SkipList* skip_list);
+void write_sstable(SkipList* skip_list);
 char* readElement(FILE* file);
 void destroy(SkipListNode* head);
+char * getWriteFileName();
 
 SkipList* create_skip_list(int max_level, size_t max_size, size_t max_block_size) {
     if(max_level <= 0) {
@@ -140,12 +142,13 @@ void put(char* k, char* v, SkipList* skip_list) {
         + sizeof(SkipListNode*) * skip_list->max_levels; 
     printf("size after put %d\n", skip_list->size);
     if(skip_list->size >= skip_list->max_size) {
-        write(skip_list);
+        write_sstable(skip_list);
         // free the skip list nodes
         destroy(skip_list->head);
         // create new skip list head
         SkipListNode* new_head = createSkipListNode(NULL, NULL, skip_list->max_levels);
         skip_list->head = new_head;
+        skip_list->size = 0;
     }
 }
 
@@ -326,7 +329,7 @@ char* readElement(FILE* file) {
 // - indext|key size 4|key|offset 8|
 // at the end we put the size of the index and start offset :
 // - |index size (nbr of elements) 4|index offset 8|
-void write(SkipList* skip_list) {
+void write_sstable(SkipList* skip_list) {
     printf("writing skip list\n");
     if(skip_list->head == NULL || skip_list->head->nexts[0] == NULL) {
         printf("error writing skip list to SSTable");
@@ -340,7 +343,8 @@ void write(SkipList* skip_list) {
     IndexEntry** index_items = malloc(sizeof(IndexEntry*) * index_capacity);
 
     // use current timestamp or just an encremented value for the name
-    FILE* file_p = fopen("db.bin", "ab");
+    char* file_name = getWriteFileName();
+    FILE* file_p = fopen(file_name, "ab");
     size_t block_size = 0;
     // first key of the block
     char* first_key = NULL;
@@ -426,6 +430,28 @@ void write(SkipList* skip_list) {
     fwrite(&index_position, offset_size, 1, file_p);
     fclose(file_p);
     printf("skip list write done\n");
+    free(file_name);
+}
+
+char * getWriteFileName() {
+    DIR* dir = opendir(".");
+    if(dir == NULL) exit(1);
+    struct dirent* entry = NULL;
+    int sstable_count = 0;
+    while((entry = readdir(dir)) != NULL) {
+        if(strncmp("sstable-", entry->d_name, 8) == 0) {
+            sstable_count++;
+        }
+    }
+    char suffix[15];
+    snprintf(suffix, sizeof(suffix), "%d", sstable_count);
+    char* new_file_name = malloc(strlen(suffix) + 9 + 4);
+    new_file_name[0] = '\0';
+    strcat(new_file_name, "sstable-");
+    strcat(new_file_name, suffix);
+    strcat(new_file_name, ".bin");
+    printf("file name %s\n", new_file_name);
+    return new_file_name;
 }
 
 void destroy(SkipListNode* head) {
