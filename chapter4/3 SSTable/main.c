@@ -25,10 +25,6 @@ int main() {
             char* result = get(key, skip_list);
             printf("%s\n", result);
         }
-        else if(strcmp(command, "getdisk") == 0){
-            char* result = getFromDisk(key, skip_list);
-            printf("%s\n", result);
-        }
         else if(strcmp(command, "print") == 0){
             print_skip_list(skip_list);
         }

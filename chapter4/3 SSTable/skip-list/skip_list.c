@@ -9,6 +9,7 @@ void write_sstable(SkipList* skip_list);
 char* readElement(FILE* file);
 void destroy(SkipListNode* head);
 char * getWriteFileName();
+char* getFileNameForInt(int sstable_number);
 
 SkipList* create_skip_list(int max_level, size_t max_size, size_t max_block_size) {
     if(max_level <= 0) {
@@ -227,12 +228,34 @@ char* get(char* key, SkipList* skip_list) {
             current = current->nexts[level];
         }
     }
-    return getFromDisk(key, skip_list);
+
+    // scan all the sstables in disk to search for key
+    // starting from the most recent sstable
+    DIR* dir = opendir(".");
+    if(dir == NULL) exit(1);
+    struct dirent* entry;
+    int file_count = 0;
+    while((entry = readdir(dir)) != NULL) {
+        if(strncmp("sstable-", entry->d_name, 8) == 0) {
+            file_count++;
+        }
+    }
+    file_count--;
+    while(file_count >= 0) {
+        char* value = getFromDisk(key, skip_list, getFileNameForInt(file_count));
+        if(value != NULL) {
+            return value;
+        }
+        file_count--;
+    }
+    return NULL;
 }
 
-char* getFromDisk(char* key, SkipList* skip_list) {
-    FILE* file = fopen("db.bin", "r");
-    if(file == NULL) exit(1);
+char* getFromDisk(char* key, SkipList* skip_list, char* file_name) {
+    FILE* file = fopen(file_name, "r");
+    if(file == NULL) {
+        return NULL; // to pass to other file if they exist
+    };
 
     // get index position
     long index_offset = -1L;
@@ -243,7 +266,6 @@ char* getFromDisk(char* key, SkipList* skip_list) {
     fseek(file, -12, SEEK_END); // -8 and -4  |index size (4)|offset (8)|
     fread(&index_size, 4, 1, file);
     printf("reading index size %d\n", index_size);
-    printf("reading index position %d\n", index_offset);
     // load index
     if(index_offset == -1L || index_size == -1) exit(1);
     fseek(file, index_offset, SEEK_SET);
@@ -278,8 +300,6 @@ char* getFromDisk(char* key, SkipList* skip_list) {
             fseek(file, index[mid]->offset, SEEK_SET);
             readElement(file);// skip the key
             char* value = readElement(file);
-            printf("value offset %d \n", index[mid]->offset);
-            printf("value from disk 1 %s \n", value);
             return value;
         }
         else if(strcmp(index[mid]->key, key) > 0) {
@@ -299,7 +319,6 @@ char* getFromDisk(char* key, SkipList* skip_list) {
 
         if(key_value != NULL && strcmp(key, key_value) == 0) {
             char* value = readElement(file);
-            printf("value from disk 2 %s \n", value);
             return value;
         }
         search_offset = ftell(file);
@@ -443,8 +462,13 @@ char * getWriteFileName() {
             sstable_count++;
         }
     }
+
+    return getFileNameForInt(sstable_count);
+}
+
+char* getFileNameForInt(int sstable_number) {
     char suffix[15];
-    snprintf(suffix, sizeof(suffix), "%d", sstable_count);
+    snprintf(suffix, sizeof(suffix), "%d", sstable_number);
     char* new_file_name = malloc(strlen(suffix) + 9 + 4);
     new_file_name[0] = '\0';
     strcat(new_file_name, "sstable-");
