@@ -24,15 +24,12 @@ SkipList* create_skip_list(int max_level, size_t max_size, size_t max_block_size
         exit(1);
     }
     
-    // size of skip list stsruct
-    size_t size = sizeof(SkipList);
-    // size of head (the struct + dynamic nexts array)
-    size += sizeof(SkipListNode) + sizeof(SkipListNode*) * max_level;
-    printf("size of creation %d\n", size);
+
+    printf("size of creation %d\n", 0);
     
     skip_list->head = createSkipListNode(NULL, NULL, max_level);
     skip_list->max_levels = max_level;
-    skip_list->size = size;
+    skip_list->size = 0; // size only account for the elements that will be writen
     skip_list->max_size = max_size;
     skip_list->max_block_size = max_block_size;
     return skip_list;
@@ -134,13 +131,12 @@ void put(char* k, char* v, SkipList* skip_list) {
     }
     
     free(predecessors);
-    // add size of node and array of pointers
-    // size of struct + key + value + nexts array
+    // only take into account the size of stuff that will be stored in the sstable :
+    // the key size, key, value size and value
     skip_list->size = skip_list->size 
-        + sizeof(SkipListNode) 
-        + strlen(key) + 1
-        + strlen(value) + 1
-        + sizeof(SkipListNode*) * skip_list->max_levels; 
+        + strlen(key)
+        + strlen(value)
+        + 4 + 4;
     printf("size after put %d\n", skip_list->size);
     if(skip_list->size >= skip_list->max_size) {
         write_sstable(skip_list);
