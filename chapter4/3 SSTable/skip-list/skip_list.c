@@ -23,10 +23,7 @@ SkipList* create_skip_list(int max_level, size_t max_size, size_t max_block_size
         printf("error creating skip list");
         exit(1);
     }
-    
-
-    printf("size of creation %d\n", 0);
-    
+        
     skip_list->head = createSkipListNode(NULL, NULL, max_level);
     skip_list->max_levels = max_level;
     skip_list->size = 0; // size only account for the elements that will be writen
@@ -101,7 +98,6 @@ void put(char* k, char* v, SkipList* skip_list) {
             skip_list->size = skip_list->size - strlen(current->value) + strlen(value);
             current->value = value;
             free(predecessors);
-            printf("size after put %d\n", skip_list->size);
             return;
         }
         else if(strcmp(current->key, key) < 0){
@@ -137,7 +133,6 @@ void put(char* k, char* v, SkipList* skip_list) {
         + strlen(key)
         + strlen(value)
         + 4 + 4;
-    printf("size after put %d\n", skip_list->size);
     if(skip_list->size >= skip_list->max_size) {
         write_sstable(skip_list);
         // free the skip list nodes
@@ -261,7 +256,6 @@ char* getFromDisk(char* key, SkipList* skip_list, char* file_name) {
     int index_size = -1;
     fseek(file, -12, SEEK_END); // -8 and -4  |index size (4)|offset (8)|
     fread(&index_size, 4, 1, file);
-    printf("reading index size %d\n", index_size);
     // load index
     if(index_offset == -1L || index_size == -1) exit(1);
     fseek(file, index_offset, SEEK_SET);
@@ -280,7 +274,6 @@ char* getFromDisk(char* key, SkipList* skip_list, char* file_name) {
 
         IndexEntry* index_entry = malloc(sizeof(IndexEntry));
         index_entry->key = key_value;
-        printf("key value: %s\n", key_value);
         index_entry->offset = offset;
 
         index[i] = index_entry;
@@ -470,7 +463,6 @@ char* getFileNameForInt(int sstable_number) {
     strcat(new_file_name, "sstable-");
     strcat(new_file_name, suffix);
     strcat(new_file_name, ".bin");
-    printf("file name %s\n", new_file_name);
     return new_file_name;
 }
 
