@@ -44,3 +44,10 @@ skip list printing example
         - we load the index using footer data
         - then we search (binary search) the index for the largest key smaller than or equal to the target key.
             - if it exist we start from its offset and scan that block
+
+## Merging and compacting segments (sstable files)
+- can be done in a backgroud thread while reading can continue from these files
+- we merge multiple input files to remove duplicate entries and keep the most recent one
+- and to delete the ones marked for deletion
+    - for deletion we write a spcial value called a TOMBSTONE
+    - the TOMBSTONE entry is not deleted imediatly, we need to make sure it doesn't exist in the other segments that are not in the merge operation
