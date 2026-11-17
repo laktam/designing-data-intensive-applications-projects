@@ -51,3 +51,8 @@ skip list printing example
 - and to delete the ones marked for deletion
     - for deletion we write a spcial value called a TOMBSTONE
     - the TOMBSTONE entry is not deleted imediatly, we need to make sure it doesn't exist in the other segments that are not in the merge operation
+
+## write ahead log (WAL)
+- to ensure no data get lost even if the database crash (for data in the memtable(not yet persisted))
+    - the storage engine keep a separated append only log of executed write to restore the memetable after crash
+    - after writing the memtable to disk we descard the part of the log 
