@@ -52,6 +52,14 @@ skip list printing example
     - for deletion we write a spcial value called a TOMBSTONE
     - the TOMBSTONE entry is not deleted imediatly, we need to make sure it doesn't exist in the other segments that are not in the merge operation
 
+### merging algo
+- iterate over two sstables (a and b)
+    - if a entry is smaller write it and increment a iterator
+    - if b entry is smaller write it and increment b iterator
+    - if they are equal write the newer entry (the one in the newer sstable) and increment both
+    - while doing this we need to keey track of index entries (block size, offset, number of elements)
+        - add an index entry when we reach max block size
+
 ## write ahead log (WAL)
 - to ensure no data get lost even if the database crash (for data in the memtable(not yet persisted))
     - the storage engine keep a separated append only log of executed write to restore the memetable after crash
