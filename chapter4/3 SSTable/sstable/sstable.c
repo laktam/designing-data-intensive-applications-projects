@@ -7,6 +7,107 @@
 
 char * getWriteFileName();
 char* readElement(FILE* file);
+void writeElement(FILE* file, char* element);
+
+// structure :
+// - data :|key size 4|key value|value size 4|value content|
+// - index:|key size 4|key|offset 8|
+// - file footer : |index size (nbr of elements) 4|index offset 8|
+
+// merge two sstable to a single file
+// delete when necessary
+// keep one when there is duplicate
+// sstable 2 is the recent one
+void merge(char* sstable_1, char* sstable_2, char* new_sstable_name) {
+    FILE* file_1 = fopen(sstable_1, "rb");
+    FILE* file_2 = fopen(sstable_2, "rb");
+    FILE* output_file = fopen(new_sstable_name, "ab");
+    if(file_1 == NULL || file_2 == NULL || output_file == NULL) {
+        exit(1);
+    }
+
+    int size_1 = 0;
+    fseek(file_1, -12, SEEK_END);
+    fread(&size_1, 4, 1, file_1);
+    int size_2 = 0;
+    fseek(file_2, -12, SEEK_END);
+    fread(&size_2, 4, 1, file_2);
+
+    if(size_1 == 0 || size_2 == NULL) {
+        exit(1);
+    }
+
+    fseek(file_1, 0, SEEK_SET);
+    fseek(file_2, 0, SEEK_SET);
+    char* key_1 = NULL;
+    char* key_2 = NULL;
+    char* value_1 = NULL;
+    char* value_2 = NULL;
+    int new_index = 0;
+
+    // count for writen elements
+    int count_1 = 0;
+    int count_2 = 0;
+    while(1){
+        if(key_1 == NULL) {
+            key_1 = readElement(file_1);
+            value_1 = readElement(file_1);
+        }
+        if(key_2 == NULL) {
+            key_2 = readElement(file_2);
+            value_2 = readElement(file_2);
+        }
+        
+        if(strcmp(key_1, key_2) == 0) {
+            writeElement(output_file, key_2);
+            writeElement(output_file, value_2);
+            key_2 = NULL;
+            count_2++;
+        }
+        else if(strcmp(key_1, key_2) > 0) {
+            writeElement(output_file, key_2);
+            writeElement(output_file, value_2);
+            key_2 = NULL;
+            count_2++;
+        }
+        else {
+            writeElement(output_file, key_1);
+            writeElement(output_file, value_1);
+            key_1 = NULL;
+            count_1++;
+        }
+        if(count_1 == size_1 || count_2 == size_2) {
+            break; // break and write the rest of the unfinished file
+        }
+        new_index++;
+    }
+
+    // write the rest of the unfinished file
+    while (count_1 < size_1)
+    {
+        char* key = readElement(file_1);
+        char* value = readElement(file_1);
+        writeElement(file_1, key);
+        writeElement(file_1, value);
+        count_1++;
+    }
+
+    while (count_2 < size_2)
+    {
+        char* key = readElement(file_2);
+        char* value = readElement(file_2);
+        writeElement(file_2, key);
+        writeElement(file_2, value);
+        count_2++;
+    }
+
+    // write index and footer
+    
+    // close
+    fclose(file_1);
+    fclose(file_2);
+    fclose(output_file);
+}
 
 // each record is writen as (key size, key data, value size, value data)
 // when wrting a record will exceed block max size :
@@ -230,4 +331,12 @@ char* readElement(FILE* file) {
     fread(content, size, 1, file);
     content[size] = '\0';
     return content;
+}
+
+// write key or value and its size before it
+// seek before it
+void writeElement(FILE* file, char* element) {
+    int size = strlen(element);
+    fwrite(&size, 4, 1, file);
+    fwrite(element, size, 1, file);
 }
