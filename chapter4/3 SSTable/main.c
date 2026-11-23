@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "skip-list/skip_list.h"
+#include "sstable/sstable.h"
 
 int main() {
     SkipList* skip_list = create_skip_list(4, 60, 25);
@@ -19,6 +20,9 @@ int main() {
         if(command == NULL || key == NULL) {
             printf("command and key are required!\n");
             continue;
+        }
+        if(strcmp(command, "merge") == 0){
+            merge(25, "sstable-0.bin", "sstable-1.bin", "output.bin");
         }
         if(strcmp(command, "get") == 0){
             char* result = get(key, skip_list);
