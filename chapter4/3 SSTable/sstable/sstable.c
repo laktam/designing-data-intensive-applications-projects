@@ -18,11 +18,6 @@ void writeElement(FILE* file, char* element);
 // delete when necessary
 // keep one when there is duplicate
 // sstable 2 is the recent one
-
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// the problem now is that size use index size (sparce index)
-// which mean it is not total size and so we write less elements
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 void merge(int max_block_size, char* sstable_1, char* sstable_2, char* new_sstable_name) {
     FILE* file_1 = fopen(sstable_1, "rb");
     FILE* file_2 = fopen(sstable_2, "rb");
