@@ -37,7 +37,7 @@ skip list printing example
     - sparce (not all keys included) index at the end of the file :
         - |key size (4)|key data|offset (8)|
     - at the end (footer) of the file
-        - |index size (nbr of elements) (4)|index offset (8)|
+        - |index size (nbr of elements) (4)|index offset (4)|
 - To get a key 
     - we look in memory in the memtable (skip list)
     - if not found we look in the files from last to first

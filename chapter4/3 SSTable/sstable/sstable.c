@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <dirent.h>
-#include <stdbool.h>
 #include "../skip-list/skip_list.h"
 #include "./sstable.h"
 
@@ -13,7 +12,7 @@ void writeElement(FILE* file, char* element);
 // structure :
 // - data :|key size 4|key value|value size 4|value content|
 // - index:|key size 4|key|offset 8|
-// - file footer : |index size (nbr of elements) 4|index offset 8|
+// - file footer : |index size (nbr of elements) 4|index offset 4|
 
 // merge two sstable to a single file
 // delete when necessary
@@ -32,14 +31,14 @@ void merge(int max_block_size, char* sstable_1, char* sstable_2, char* new_sstab
         exit(1);
     }
 
-    int size_1 = 0;
-    fseek(file_1, -12, SEEK_END);
-    fread(&size_1, 4, 1, file_1);
-    int size_2 = 0;
-    fseek(file_2, -12, SEEK_END);
-    fread(&size_2, 4, 1, file_2);
+    long index_1_offset = 0;
+    fseek(file_1, -4, SEEK_END);
+    fread(&index_1_offset, 4, 1, file_1);
+    long index_2_offset = 0;
+    fseek(file_2, -4, SEEK_END);
+    fread(&index_2_offset, 4, 1, file_2);
 
-    if(size_1 == 0 || size_2 == 0) {
+    if(index_1_offset == 0 || index_2_offset == 0) {
         exit(1);
     }
 
@@ -68,18 +67,24 @@ void merge(int max_block_size, char* sstable_1, char* sstable_2, char* new_sstab
     char* current_key = NULL;
 
     printf("start writing merged index\n");
+    long position = 0;
+    long file_1_offset = 0;
+    long file_2_offset = 0;
     while(1){   
         printf("current key :%s\n", current_key);
-        long position = ftell(output_file);
-        if(position == -1L) {
+        position = ftell(output_file);
+        file_1_offset = ftell(file_1);
+        file_2_offset = ftell(file_2);
+
+        if(position == -1L || file_1_offset == -1L || file_2_offset == -1L) {
             printf("error writing skip list to SSTable");
             exit(1);
         }
-        if(key_1 == NULL && count_1 != size_1) {
+        if(key_1 == NULL && file_1_offset < index_1_offset) {
             key_1 = readElement(file_1);
             value_1 = readElement(file_1);
         }
-        if(key_2 == NULL && count_2 != size_2) {
+        if(key_2 == NULL && file_2_offset < index_2_offset) {
             key_2 = readElement(file_2);
             value_2 = readElement(file_2);
         }
@@ -106,7 +111,7 @@ void merge(int max_block_size, char* sstable_1, char* sstable_2, char* new_sstab
         }
 
         // if we reached the end of file 1 but not file 2
-        if(count_1 == size_1 && count_2 < size_2) {
+        if(file_1_offset >= index_1_offset && file_2_offset < index_2_offset) {
             writeElement(output_file, key_2);
             writeElement(output_file, value_2);
             key_size = strlen(key_2);
@@ -116,7 +121,7 @@ void merge(int max_block_size, char* sstable_1, char* sstable_2, char* new_sstab
             key_2 = NULL;
         }
         // end of file 2 but not file 1
-        else if (count_1 < size_1 && count_2 == size_2) {
+        else if (file_1_offset < index_1_offset && file_2_offset >= index_2_offset) {
             writeElement(output_file, key_1);
             writeElement(output_file, value_1);
             key_size = strlen(key_1);
@@ -164,7 +169,7 @@ void merge(int max_block_size, char* sstable_1, char* sstable_2, char* new_sstab
             block_size = 0;
         }
         
-        if(count_1 == size_1 && count_2 == size_2) {
+        if(file_1_offset >= index_1_offset && file_2_offset >= index_2_offset) {
             break;
         }
         
@@ -212,7 +217,7 @@ void merge(int max_block_size, char* sstable_1, char* sstable_2, char* new_sstab
 // - data :|key size 4|key value|value size 4|value content|
 // - indext|key size 4|key|offset 8|
 // at the end we put the size of the index and start offset :
-// - |index size (nbr of elements) 4|index offset 8|
+// - |index size (nbr of elements) 4|index offset 4|
 void write_sstable(SkipList* skip_list) {
     printf("writing skip list\n");
     if(skip_list->head == NULL || skip_list->head->nexts[0] == NULL) {
@@ -299,7 +304,7 @@ void write_sstable(SkipList* skip_list) {
         exit(1);
     }
 
-    int offset_size = 8;
+    int offset_size = 4;
     for(int i = 0; i < index_size; i++) {
         char* key = index_items[i]->key;
         int key_size = strlen(key);
@@ -433,5 +438,6 @@ char* readElement(FILE* file) {
 void writeElement(FILE* file, char* element) {
     int size = strlen(element);
     fwrite(&size, 4, 1, file);
+    printf("writing element :%s\n", element);
     fwrite(element, size, 1, file);
 }
