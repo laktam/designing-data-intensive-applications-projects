@@ -35,7 +35,7 @@ skip list printing example
     - data (bytes):
         - |key size (4)|key data|value size (4)|value data|...
     - sparce (not all keys included) index at the end of the file :
-        - |key size (4)|key data|offset (8)|
+        - |key size (4)|key data|offset (4)|
     - at the end (footer) of the file
         - |index size (nbr of elements) (4)|index offset (4)|
 - To get a key 
