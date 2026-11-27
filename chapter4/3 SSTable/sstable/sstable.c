@@ -11,7 +11,7 @@ void writeElement(FILE* file, char* element);
 
 // structure :
 // - data :|key size 4|key value|value size 4|value content|
-// - index:|key size 4|key|offset 8|
+// - index:|key size 4|key|offset 4|
 // - file footer : |index size (nbr of elements) 4|index offset 4|
 
 // merge two sstable to a single file
@@ -132,7 +132,7 @@ void merge(int max_block_size, char* sstable_1, char* sstable_2, char* new_sstab
         // first key of the block and its offset
         if(block_size == 0) {
             first_key = current_key;
-            first_key_offset = position;
+            first_key_offset = ftell(output_file) - current_element_size;
 
 
             // when we reach the block size we add and index entry
@@ -180,7 +180,7 @@ void merge(int max_block_size, char* sstable_1, char* sstable_2, char* new_sstab
         exit(1);
     }
 
-    int offset_size = 8;
+    int offset_size = 4;
     for(int i = 0; i < index_size; i++) {
         printf("writing index : %d\n", i);
         char* key = index_items[i]->key;
@@ -210,7 +210,7 @@ void merge(int max_block_size, char* sstable_1, char* sstable_2, char* new_sstab
 // put the index at the end, and put its size and offset at the verry end (footer) of the file
 // structure :
 // - data :|key size 4|key value|value size 4|value content|
-// - indext|key size 4|key|offset 8|
+// - indext|key size 4|key|offset 4|
 // at the end we put the size of the index and start offset :
 // - |index size (nbr of elements) 4|index offset 4|
 void write_sstable(SkipList* skip_list) {
@@ -275,7 +275,7 @@ void write_sstable(SkipList* skip_list) {
             else {
                 index_items[index_size++] = index_entry;
             }
-            index_bytes_size += strlen(first_key) + 8;
+            index_bytes_size += strlen(first_key) + 4;
         }
         // all elements should be counted in block size not just index element
         block_size += current_element_size;
@@ -326,11 +326,11 @@ char* getFromDisk(char* key, SkipList* skip_list, char* file_name) {
 
     // get index position
     long index_offset = -1L;
-    fseek(file, -8, SEEK_END);
-    fread(&index_offset, 8, 1, file);
+    fseek(file, -4, SEEK_END);
+    fread(&index_offset, 4, 1, file);
     // get nbr of elements
     int index_size = -1;
-    fseek(file, -12, SEEK_END); // -8 and -4  |index size (4)|offset (8)|
+    fseek(file, -8, SEEK_END); // -4 and -4  |index size (4)|index offset (4)|
     fread(&index_size, 4, 1, file);
     // load index
     if(index_offset == -1L || index_size == -1) exit(1);
@@ -346,7 +346,7 @@ char* getFromDisk(char* key, SkipList* skip_list, char* file_name) {
         key_value[key_size] = '\0';
 
         long offset = -1L;
-        fread(&offset, 8, 1, file);
+        fread(&offset, 4, 1, file);
 
         IndexEntry* index_entry = malloc(sizeof(IndexEntry));
         index_entry->key = key_value;
@@ -433,6 +433,6 @@ char* readElement(FILE* file) {
 void writeElement(FILE* file, char* element) {
     int size = strlen(element);
     fwrite(&size, 4, 1, file);
-    printf("writing element :%s\n", element);
+    printf("writing element :%s, at position : %d\n", element, ftell(file));
     fwrite(element, size, 1, file);
 }
